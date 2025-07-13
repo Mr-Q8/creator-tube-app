@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "../components/ui/toaster"
+import './globals.css';
 export const metadata: Metadata = {
   title: 'Creator Tube',
   description: 'An elegant interface for your Colab notebooks.',
