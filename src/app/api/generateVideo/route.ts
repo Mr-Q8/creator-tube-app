@@ -2,40 +2,55 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    // 1. Obtener los datos (prompt, etc.) que envía el frontend.
+    // 1. Obtenemos el cuerpo de la solicitud que envía el frontend.
     const body = await req.json();
+    const { prompt, maxIterations } = body; // Extraemos los datos que nos interesan.
 
-    // 2. Obtener la URL del servidor de Colab desde las variables de entorno de Vercel.
+    // 2. Verificamos que el prompt exista.
+    if (!prompt) {
+      throw new Error("El 'prompt' es requerido en el cuerpo de la solicitud.");
+    }
+
+    // 3. Obtenemos la URL de nuestro servidor de Colab desde Vercel.
     const colabUrl = process.env.COLAB_SERVER_URL;
 
     if (!colabUrl) {
-      // Si la variable de entorno no está, devolvemos un error claro.
       throw new Error('La variable de entorno COLAB_SERVER_URL no está configurada en Vercel.');
     }
 
-    // 3. Reenviar la solicitud al servidor FastAPI en Colab.
-    // ¡IMPORTANTE! Asegúrate de que la ruta (ej. /generate) coincida con la de tu API en FastAPI.
+    // 4. Preparamos el cuerpo de la solicitud para que coincida con lo que espera FastAPI.
+    // FastAPI espera un JSON con una clave "prompt".
+    const requestBodyForColab = {
+      prompt: prompt,
+      // Opcional: si tu API de Colab también usa maxIterations, puedes añadirlo aquí.
+      // max_iterations: maxIterations 
+    };
     
+    // 5. Llamamos a la API de Colab con la ruta correcta y el cuerpo correcto.
     const response = await fetch(`${colabUrl}/generate-video`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(requestBodyForColab), // Enviamos el cuerpo formateado.
     });
 
-    // 4. Si Colab da un error, pasarlo al frontend.
+    // 6. Manejamos la respuesta como antes.
     if (!response.ok) {
       const errorData = await response.text();
-      throw new Error(`Error del servidor de Colab: ${errorData}`);
+      // Intentamos parsear el error por si es un JSON de FastAPI
+      try {
+          const jsonError = JSON.parse(errorData);
+          throw new Error(`Error del servidor de Colab: ${jsonError.detail || errorData}`);
+      } catch (e) {
+          throw new Error(`Error del servidor de Colab: ${errorData}`);
+      }
     }
 
-    // 5. Devolver la respuesta de Colab al frontend.
     const data = await response.json();
     return NextResponse.json(data);
 
   } catch (error: any) {
-    // Manejar cualquier error que ocurra en el proceso.
     console.error("Error en la API Route /api/generateVideo:", error);
     return new NextResponse(
       JSON.stringify({ error: error.message }),
