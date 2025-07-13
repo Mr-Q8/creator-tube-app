@@ -32,8 +32,23 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { runAutomationLoop, type IterationResult } from '@/app/actions';
+// Se elimina la importación de "runAutomationLoop" porque ya no se usa.
+// import { runAutomationLoop, type IterationResult } from '@/app/actions'; 
 import { useToast } from '@/hooks/use-toast';
+
+
+// Definiendo el tipo aquí por si lo necesitamos para el estado
+type IterationResult = {
+  iteration: number;
+  parameters: string;
+  results: {
+    shouldRerun: boolean;
+    reason: string;
+    newParameters?: string;
+    videoUrl?: string;
+  };
+};
+
 
 const formSchema = z.object({
   prompt: z.string().min(10, 'El prompt debe tener al menos 10 caracteres.'),
@@ -54,39 +69,73 @@ export function CreatorTube() {
     },
   });
 
+  // ==================================================================
+  // ===== INICIO DE LA SECCIÓN CORREGIDA =============================
+  // ==================================================================
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setResults([]);
     setFinalVideoUrl(null);
+    
     try {
-      const finalResults = await runAutomationLoop(values.prompt, values.maxIterations);
-      setResults(finalResults);
+      // Llamamos a nuestra nueva API en Vercel en lugar de a la acción local.
+      const response = await fetch('/api/generateVideo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        // Si hay un error, lo leemos del servidor y lo lanzamos para que lo capture el 'catch'.
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ocurrió un error en el servidor.');
+      }
+
+      const result = await response.json();
       
-      const lastResult = finalResults[finalResults.length - 1];
-      if (lastResult && lastResult.results.videoUrl) {
-        setFinalVideoUrl(lastResult.results.videoUrl);
+      // Aquí asumimos que la API devuelve un resultado con una estructura similar
+      // a la que esperábamos antes. Puedes adaptar esta parte según la respuesta real.
+      // Por ahora, nos centraremos en obtener la URL del video.
+
+      if (result.videoUrl) {
+        setFinalVideoUrl(result.videoUrl);
         toast({
             title: '¡Video Generado!',
             description: 'La automatización se completó y tu video está listo.',
         });
       } else {
+        // Si no hay URL de video, mostramos un mensaje genérico.
         toast({
           title: 'Automatización Completa',
-          description: `El ciclo de automatización finalizó después de ${finalResults.length} iteración(es).`,
+          description: `El proceso finalizó. Revisa los registros para más detalles.`,
         });
       }
+      
+      // Opcional: si quieres seguir mostrando el historial, puedes actualizar el estado así.
+      // Esto requiere que la respuesta de tu API tenga la misma estructura que 'IterationResult'.
+      if(result.iteration) {
+        setResults([result]);
+      }
+
 
     } catch (error) {
-      console.error(error);
+      console.error("Error al llamar a la API de Vercel:", error);
       toast({
         variant: 'destructive',
         title: 'Ocurrió un error',
-        description: error instanceof Error ? error.message : 'No se pudo ejecutar el ciclo de automatización.',
+        description: error instanceof Error ? error.message : 'No se pudo conectar con el servidor de Colab.',
       });
     } finally {
       setIsLoading(false);
     }
   }
+
+  // ==================================================================
+  // ===== FIN DE LA SECCIÓN CORREGIDA ================================
+  // ==================================================================
 
   const getStatusIcon = (result: IterationResult, index: number, total: number) => {
     const isLast = index === total - 1;
