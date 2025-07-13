@@ -15,7 +15,8 @@ export async function POST(req: Request) {
 
     // 3. Reenviar la solicitud al servidor FastAPI en Colab.
     // ¡IMPORTANTE! Asegúrate de que la ruta (ej. /generate) coincida con la de tu API en FastAPI.
-    const response = await fetch(`${colabUrl}/generate`, {
+    
+    const response = await fetch(`${colabUrl}/generate-video`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
