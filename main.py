@@ -1,12 +1,11 @@
 import os
-from fastapi import FastAPI, HTTPException, Request # Import Request
+from fastapi import FastAPI, HTTPException, Request # Mantenemos Request por si acaso, pero la clave es BaseModel
+from pydantic import BaseModel # <-- ¡Importante! Asegúrate de que esta línea esté
 import uvicorn
 import cloudinary
 import cloudinary.uploader
-# from pydantic import BaseModel # Comentado porque no la usamos en esta versión
 
-# --- Configuración de Cloudinary ---
-# Render leerá estas variables de entorno
+# Cloudinary config
 cloudinary.config( 
   cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'), 
   api_key = os.environ.get('CLOUDINARY_API_KEY'), 
@@ -16,29 +15,36 @@ cloudinary.config(
 
 app = FastAPI()
 
-# --- NUEVO ENDPOINT PARA PRUEBA BÁSICA (GET) ---
-# Este endpoint es solo para verificar que el servidor está vivo.
+# --- Definición del Modelo de Entrada (BaseModel) ---
+# Esto le dice a FastAPI cómo debe ser el JSON que esperas recibir en el cuerpo.
+class VideoRequest(BaseModel):
+    prompt: str
+    maxIterations: int
+# ----------------------------------------------------
+
+# --- ENDPOINT PARA PRUEBA BÁSICA (GET) ---
+# Solo para verificar que el servidor está vivo y respondiendo a la raíz.
 @app.get("/")
 async def root():
     return {"message": "Hello from Render FastAPI!"}
-# ------------------------------------------------
+# -----------------------------------------
 
-# @app.post("/generate-video") <-- Esta es la ruta que tu Vercel debería llamar
-# Si en tu Vercel lo llamas a /generate-video/ con barra al final, esta también debe tenerla:
-@app.post("/generate-video/") # <--- ¡IMPORTANTE! Hemos añadido la barra final aquí. Asegúrate que tu Vercel llame también con ella.
-async def generate_video_endpoint(request: Request): # Esperamos un objeto Request
+# --- ENDPOINT PRINCIPAL (POST) ---
+# FastAPI ahora usará VideoRequest para parsear el cuerpo JSON automáticamente.
+@app.post("/generate-video/") # <--- Ruta con barra final.
+async def generate_video_endpoint(request_data: VideoRequest): # <-- ¡Aquí usamos el BaseModel!
     try:
-        body = await request.json() # Leemos el cuerpo de la solicitud como JSON
-        prompt = body.get("prompt", "No prompt provided") # Extraemos el prompt
-        max_iterations = body.get("maxIterations", 3) # Extraemos maxIterations
+        # Accedemos a los datos directamente desde el objeto request_data
+        prompt = request_data.prompt
+        max_iterations = request_data.maxIterations
 
         print(f"▶️ Solicitud recibida para: '{prompt}' con {max_iterations} iteraciones.")
         
-        # Simulación de la generación del video
+        # Simulación (esto lo reemplazarás con tu lógica real de generación de video)
         video_filename = "video_generado.mp4"
-        video_path = f"./{video_filename}" # Guarda en la carpeta actual del servicio
+        video_path = f"./{video_filename}"
         with open(video_path, "w") as f:
-            f.write(f"Este es un video de prueba para el prompt: {prompt} y {max_iterations} iteraciones.")
+            f.write(f"Video de prueba para: {prompt} y {max_iterations} iteraciones.")
         
         # Subir a Cloudinary
         print("☁️ Subiendo video a Cloudinary...")
@@ -46,19 +52,14 @@ async def generate_video_endpoint(request: Request): # Esperamos un objeto Reque
         public_url = upload_result['secure_url']
         print(f"✔️ Subida completada. URL: {public_url}")
         
-        os.remove(video_path) # Limpiar el archivo local después de subir
+        os.remove(video_path) # Limpiar el archivo local
         
         return {"videoUrl": public_url} # Devolvemos la URL del video
-    
     except Exception as e:
         print(f"❌ Ocurrió un error grave en el endpoint: {e}")
-        # Se lanza una HTTPException para que FastAPI la maneje y devuelva un error 500 al cliente
         raise HTTPException(status_code=500, detail=str(e))
 
-# =================================================================================
-# ¡ESTE BLOQUE DEBE ESTAR SIN NINGUNA INDENTACIÓN (a la izquierda del todo)!
-# =================================================================================
+# --- Inicio del servidor Uvicorn (Sin indentación) ---
 if __name__ == "__main__":
-    # Render asigna un puerto a tu aplicación a través de la variable de entorno 'PORT'
-    port = int(os.environ.get("PORT", 8000)) # Se usa el puerto de Render o 8000 por defecto
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
