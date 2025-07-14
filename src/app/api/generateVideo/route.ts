@@ -10,6 +10,7 @@ export async function POST(req: Request) {
     }
 
     const colabUrl = process.env.COLAB_SERVER_URL;
+    console.log("DEBUG: COLAB_SERVER_URL que está usando Vercel:", colabUrl);
 
     if (!colabUrl) {
       throw new Error('La variable de entorno COLAB_SERVER_URL no está configurada en Vercel.');
