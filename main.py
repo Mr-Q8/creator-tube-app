@@ -44,9 +44,6 @@ async def generate_video_endpoint(request: Request): # Expecting Request
     except Exception as e:
         print(f"❌ Error en el endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-
     if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000)) # Aseguramos que sea un entero
-    uvicorn.run(app, host="0.0.0.0", port=port)
+        port = int(os.environ.get("PORT", 8000)) # Aseguramos que sea un entero
+        uvicorn.run(app, host="0.0.0.0", port=port)
