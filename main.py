@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException, Request # Mantenemos Request por si acaso, pero la clave es BaseModel
+from fastapi import FastAPI, HTTPException # No necesitamos Request si usamos BaseModel
 from pydantic import BaseModel # <-- ¡Importante! Asegúrate de que esta línea esté
 import uvicorn
 import cloudinary
