@@ -1,11 +1,10 @@
 import os
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request # Import Request
 import uvicorn
 import cloudinary
 import cloudinary.uploader
-# from pydantic import BaseModel # <-- ¡No la necesitamos para esta prueba!
 
-# --- Configuración de Cloudinary ---
+# Cloudinary config
 cloudinary.config( 
   cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'), 
   api_key = os.environ.get('CLOUDINARY_API_KEY'), 
@@ -15,15 +14,17 @@ cloudinary.config(
 
 app = FastAPI()
 
-# class VideoRequest(BaseModel): # <-- ¡No la necesitamos para esta prueba!
-#     prompt: str
-#     maxIterations: int
+# --- NUEVO ENDPOINT PARA PRUEBA BÁSICA (GET) ---
+@app.get("/")
+async def root():
+    return {"message": "Hello from Render FastAPI!"}
+# ------------------------------------------------
 
-@app.post("/generate-video") # Ruta simple
-async def generate_video_endpoint(request: Request): # Recibe la request directamente
+@app.post("/generate-video/") # <--- ¡IMPORTANTE! AÑADIMOS LA BARRA FINAL AQUÍ
+async def generate_video_endpoint(request: Request): # Expecting Request
     try:
-        body = await request.json() # Lee el JSON del cuerpo
-        prompt = body.get("prompt", "No prompt provided") # Extrae el prompt
+        body = await request.json()
+        prompt = body.get("prompt", "No prompt provided") 
 
         print(f"▶️ Solicitud recibida para: '{prompt}'")
         
