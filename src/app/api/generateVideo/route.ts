@@ -19,18 +19,17 @@ export async function POST(req: Request) {
     }
 
     // 4. Preparamos el cuerpo de la solicitud para que coincida con lo que espera FastAPI.
-    // FastAPI espera un JSON con una clave "prompt".
     const requestBodyForColab = {
       prompt: prompt,
-      // Opcional: si tu API de Colab también usa maxIterations, puedes añadirlo aquí.
-      // max_iterations: maxIterations 
+      maxIterations: maxIterations 
     };
     
-    // 5. Llamamos a la API de Colab con la ruta correcta y el cuerpo correcto.
+    // 5. Llamamos a la API de Colab con la ruta correcta, el cuerpo correcto y la cabecera para ngrok.
     const response = await fetch(`${colabUrl}/generate-video`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true', // <-- LA LÍNEA MÁS IMPORTANTE PARA EVITAR EL ERROR DE NGROK
       },
       body: JSON.stringify(requestBodyForColab), // Enviamos el cuerpo formateado.
     });
