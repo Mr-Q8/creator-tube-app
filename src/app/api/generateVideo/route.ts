@@ -2,47 +2,41 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    // 1. Obtenemos el cuerpo de la solicitud que envía el frontend.
     const body = await req.json();
-    const { prompt, maxIterations } = body; // Extraemos los datos que nos interesan.
+    const { prompt, maxIterations } = body;
 
-    // 2. Verificamos que el prompt exista.
     if (!prompt) {
       throw new Error("El 'prompt' es requerido en el cuerpo de la solicitud.");
     }
 
-    // 3. Obtenemos la URL de nuestro servidor de Colab desde Vercel.
     const colabUrl = process.env.COLAB_SERVER_URL;
 
     if (!colabUrl) {
       throw new Error('La variable de entorno COLAB_SERVER_URL no está configurada en Vercel.');
     }
 
-    // 4. Preparamos el cuerpo de la solicitud para que coincida con lo que espera FastAPI.
     const requestBodyForColab = {
       prompt: prompt,
       maxIterations: maxIterations 
     };
     
-    // 5. Llamamos a la API de Colab con la ruta correcta, el cuerpo correcto y la cabecera para ngrok.
     const response = await fetch(`${colabUrl}/generate-video`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // <-- LA LÍNEA MÁS IMPORTANTE PARA EVITAR EL ERROR DE NGROK
+        'ngrok-skip-browser-warning': 'true', // La primera cabecera para ngrok
+        'User-Agent': 'Vercel-Function/1.0',   // LA CABECERA ADICIONAL Y MÁS IMPORTANTE
       },
-      body: JSON.stringify(requestBodyForColab), // Enviamos el cuerpo formateado.
+      body: JSON.stringify(requestBodyForColab),
     });
 
-    // 6. Manejamos la respuesta como antes.
     if (!response.ok) {
       const errorData = await response.text();
-      // Intentamos parsear el error por si es un JSON de FastAPI
       try {
           const jsonError = JSON.parse(errorData);
           throw new Error(`Error del servidor de Colab: ${jsonError.detail || errorData}`);
       } catch (e) {
-          throw new Error(`Error del servidor de Colab: ${errorData}`);
+          throw new Error(`Error del servidor de Colab/Ngrok: ${errorData}`);
       }
     }
 
