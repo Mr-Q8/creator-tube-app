@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     
     // Llamamos a la API de Render con la ruta correcta y solo las cabeceras estándar.
     
-    const response = await fetch(`${colabUrl}/generate-video/`, { // <-- ¡IMPORTANTE! AÑADIMOS LA BARRA FINAL AQUÍ
+    const response = await fetch(`${colabUrl}/process-video/`, { // <-- ¡CAMBIO DE RUTA!// <-- ¡IMPORTANTE! AÑADIMOS LA BARRA FINAL AQUÍ
       method: 'POST',
       headers: {
         'Content-Type': 'application/json', // Solo esta cabecera es necesaria

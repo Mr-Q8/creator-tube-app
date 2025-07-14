@@ -31,7 +31,7 @@ async def root():
 
 # --- ENDPOINT PRINCIPAL (POST) ---
 # FastAPI ahora usará VideoRequest para parsear el cuerpo JSON automáticamente.
-@app.post("/generate-video/") # <--- Ruta con barra final.
+@app.post("/process-video/") # <--- ¡CAMBIO DE RUTA!# <--- Ruta con barra final.
 async def generate_video_endpoint(request_data: VideoRequest): # <-- ¡Aquí usamos el BaseModel!
     try:
         # Accedemos a los datos directamente desde el objeto request_data
